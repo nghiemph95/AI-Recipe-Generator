@@ -1,14 +1,20 @@
 import { Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import { ChefHat, Home, UtensilsCrossed, Calendar, ShoppingCart, Settings, LogOut } from 'lucide-react';
 
 const Navbar = () => {
-    const { user, logout } = useAuth();
+    const { t, i18n } = useTranslation();
+    const { logout } = useAuth();
     const navigate = useNavigate();
 
     const handleLogout = () => {
         logout();
         navigate('/login');
+    };
+
+    const toggleLanguage = () => {
+        i18n.changeLanguage(i18n.language === 'en' ? 'vi' : 'en');
     };
 
     return (
@@ -18,21 +24,27 @@ const Navbar = () => {
                     {/* Logo */}
                     <Link to="/dashboard" className="flex items-center gap-2 text-xl font-semibold text-gray-900">
                         <ChefHat className="w-7 h-7 text-emerald-500" />
-                        <span>AI Recipe Generator</span>
+                        <span>{t('common.appName')}</span>
                     </Link>
 
-                    {/* Navigation Links */}
                     <div className="hidden md:flex items-center gap-1">
-                        <NavLink to="/dashboard" icon={<Home className="w-4 h-4" />} label="Dashboard" />
-                        <NavLink to="/pantry" icon={<UtensilsCrossed className="w-4 h-4" />} label="Pantry" />
-                        <NavLink to="/generate" icon={<ChefHat className="w-4 h-4" />} label="Generate" />
-                        <NavLink to="/recipes" icon={<UtensilsCrossed className="w-4 h-4" />} label="Recipes" />
-                        <NavLink to="/meal-plan" icon={<Calendar className="w-4 h-4" />} label="Meal Plan" />
-                        <NavLink to="/shopping-list" icon={<ShoppingCart className="w-4 h-4" />} label="Shopping" />
+                        <NavLink to="/dashboard" icon={<Home className="w-4 h-4" />} label={t('nav.dashboard')} />
+                        <NavLink to="/pantry" icon={<UtensilsCrossed className="w-4 h-4" />} label={t('nav.pantry')} />
+                        <NavLink to="/generate" icon={<ChefHat className="w-4 h-4" />} label={t('nav.generate')} />
+                        <NavLink to="/recipes" icon={<UtensilsCrossed className="w-4 h-4" />} label={t('nav.recipes')} />
+                        <NavLink to="/meal-plan" icon={<Calendar className="w-4 h-4" />} label={t('nav.mealPlan')} />
+                        <NavLink to="/shopping-list" icon={<ShoppingCart className="w-4 h-4" />} label={t('nav.shopping')} />
                     </div>
 
-                    {/* User Menu */}
                     <div className="flex items-center gap-3">
+                        <button
+                            type="button"
+                            onClick={toggleLanguage}
+                            className="px-2.5 py-1.5 text-sm font-medium text-gray-600 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                            title={t('common.language')}
+                        >
+                            {i18n.language === 'en' ? 'EN' : 'VI'}
+                        </button>
                         <Link
                             to="/settings"
                             className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
@@ -44,7 +56,7 @@ const Navbar = () => {
                             className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
                         >
                             <LogOut className="w-4 h-4" />
-                            <span className="hidden sm:inline">Logout</span>
+                            <span className="hidden sm:inline">{t('common.logout')}</span>
                         </button>
                     </div>
                 </div>

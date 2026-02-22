@@ -1,21 +1,12 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import Navbar from "../components/Navbar";
-import {
-  ChefHat,
-  UtensilsCrossed,
-  Calendar,
-  ShoppingCart,
-  TrendingUp,
-  Clock,
-} from "lucide-react";
-import {
-  dummyStats,
-  getRecentRecipes,
-  getUpcomingMeals,
-} from "../data/dummyData";
+import { ChefHat, UtensilsCrossed, Calendar, Clock } from "lucide-react";
+import { recipesApi, pantryApi, mealPlansApi } from "../services/api.js";
 
 const Dashboard = () => {
+  const { t } = useTranslation();
   const [stats, setStats] = useState({
     totalRecipes: 0,
     pantryItems: 0,
@@ -23,17 +14,47 @@ const Dashboard = () => {
   });
   const [recentRecipes, setRecentRecipes] = useState([]);
   const [upcomingMeals, setUpcomingMeals] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Load dummy data
-    setStats({
-      totalRecipes: dummyStats.recipes.total_recipes,
-      pantryItems: dummyStats.pantry.total_items,
-      mealsThisWeek: dummyStats.mealPlans.this_week_count,
-    });
-    setRecentRecipes(getRecentRecipes(5));
-    setUpcomingMeals(getUpcomingMeals(5));
+    let cancelled = false;
+    async function load() {
+      try {
+        const [recipeRes, pantryRes, mealRes, recentRes, upcomingRes] = await Promise.all([
+          recipesApi.getStats(),
+          pantryApi.getStats(),
+          mealPlansApi.getStats(),
+          recipesApi.getRecent({ limit: 5 }),
+          mealPlansApi.getUpcoming({ limit: 5 }),
+        ]);
+        if (cancelled) return;
+        setStats({
+          totalRecipes: recipeRes?.stats?.total_recipes ?? 0,
+          pantryItems: pantryRes?.stats?.total_items ?? 0,
+          mealsThisWeek: mealRes?.stats?.this_week_count ?? 0,
+        });
+        setRecentRecipes(recentRes?.recipes ?? []);
+        setUpcomingMeals(upcomingRes?.meals ?? []);
+      } catch {
+        if (!cancelled) {
+          setRecentRecipes([]);
+          setUpcomingMeals([]);
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+    load();
+    return () => { cancelled = true; };
   }, []);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -42,29 +63,27 @@ const Dashboard = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-gray-600 mt-1">
-            Welcome back! Here's your cooking overview
-          </p>
+          <h1 className="text-3xl font-bold text-gray-900">{t('dashboard.title')}</h1>
+          <p className="text-gray-600 mt-1">{t('dashboard.subtitle')}</p>
         </div>
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <StatCard
             icon={<ChefHat className="w-6 h-6" />}
-            label="Total Recipes"
+            label={t('dashboard.totalRecipes')}
             value={stats.totalRecipes}
             color="emerald"
           />
           <StatCard
             icon={<UtensilsCrossed className="w-6 h-6" />}
-            label="Pantry Items"
+            label={t('dashboard.pantryItems')}
             value={stats.pantryItems}
             color="blue"
           />
           <StatCard
             icon={<Calendar className="w-6 h-6" />}
-            label="Meals This Week"
+            label={t('dashboard.mealsThisWeek')}
             value={stats.mealsThisWeek}
             color="purple"
           />
@@ -81,10 +100,8 @@ const Dashboard = () => {
                 <ChefHat className="w-6 h-6" />
               </div>
               <div>
-                <h3 className="font-semibold text-lg">Generate Recipe</h3>
-                <p className="text-emerald-800 text-sm">
-                  Create AI-powered recipes
-                </p>
+                <h3 className="font-semibold text-lg">{t('dashboard.generateRecipe')}</h3>
+                <p className="text-emerald-800 text-sm">{t('dashboard.generateRecipeDesc')}</p>
               </div>
             </div>
           </Link>
@@ -98,12 +115,8 @@ const Dashboard = () => {
                 <UtensilsCrossed className="w-6 h-6 text-emerald-600" />
               </div>
               <div>
-                <h3 className="font-semibold text-lg text-gray-900">
-                  Manage Pantry
-                </h3>
-                <p className="text-gray-600 text-sm">
-                  Add and track ingredients
-                </p>
+                <h3 className="font-semibold text-lg text-gray-900">{t('dashboard.managePantry')}</h3>
+                <p className="text-gray-600 text-sm">{t('dashboard.managePantryDesc')}</p>
               </div>
             </div>
           </Link>
@@ -114,14 +127,12 @@ const Dashboard = () => {
           {/* Recent Recipes */}
           <div className="bg-white rounded-xl border border-gray-200 p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-gray-900">
-                Recent Recipes
-              </h2>
+              <h2 className="text-lg font-semibold text-gray-900">{t('dashboard.recentRecipes')}</h2>
               <Link
                 to="/recipes"
                 className="text-sm text-emerald-600 hover:text-emerald-700 font-medium"
               >
-                View all
+                {t('common.viewAll')}
               </Link>
             </div>
 
@@ -149,23 +160,19 @@ const Dashboard = () => {
                 ))}
               </div>
             ) : (
-              <p className="text-gray-500 text-center py-8">
-                No recipes yet. Generate your first one!
-              </p>
+              <p className="text-gray-500 text-center py-8">{t('dashboard.noRecipesYet')}</p>
             )}
           </div>
 
           {/* Upcoming Meals */}
           <div className="bg-white rounded-xl border border-gray-200 p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-gray-900">
-                Upcoming Meals
-              </h2>
+              <h2 className="text-lg font-semibold text-gray-900">{t('dashboard.upcomingMeals')}</h2>
               <Link
                 to="/meal-plan"
                 className="text-sm text-emerald-600 hover:text-emerald-700 font-medium"
               >
-                View calendar
+                {t('dashboard.viewCalendar')}
               </Link>
             </div>
 
@@ -191,9 +198,7 @@ const Dashboard = () => {
                 ))}
               </div>
             ) : (
-              <p className="text-gray-500 text-center py-8">
-                No meals planned yet
-              </p>
+              <p className="text-gray-500 text-center py-8">{t('dashboard.noMealsPlanned')}</p>
             )}
           </div>
         </div>

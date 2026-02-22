@@ -1,38 +1,61 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { Clock, Users, ChefHat, ArrowLeft, Trash2, Calendar } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { Clock, Users, ArrowLeft, Trash2 } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import toast from 'react-hot-toast';
-import { getRecipeById } from '../data/dummyData';
+import { recipesApi } from '../services/api.js';
 
 const RecipeDetail = () => {
+    const { t } = useTranslation();
     const { id } = useParams();
     const navigate = useNavigate();
     const [recipe, setRecipe] = useState(null);
+    const [loading, setLoading] = useState(true);
     const [servings, setServings] = useState(4);
     const [checkedIngredients, setCheckedIngredients] = useState(new Set());
 
     useEffect(() => {
-        loadRecipe();
-    }, [id]);
-
-    const loadRecipe = () => {
-        const recipeData = getRecipeById(parseInt(id));
-        if (recipeData) {
-            setRecipe(recipeData);
-            setServings(recipeData.servings || 4);
-        } else {
-            toast.error('Recipe not found');
-            navigate('/recipes');
+        let cancelled = false;
+        async function load() {
+            setLoading(true);
+            try {
+                const res = await recipesApi.getById(id);
+                const recipeData = res?.recipe;
+                if (cancelled) return;
+                if (recipeData) {
+                    setRecipe(recipeData);
+                    setServings(recipeData.servings || 4);
+                } else {
+                    toast.error('Recipe not found');
+                    navigate('/recipes');
+                }
+            } catch (e) {
+                if (!cancelled) {
+                    if (e.response?.status === 404) {
+                        toast.error(t('recipeDetail.recipeNotFound'));
+                        navigate('/recipes');
+                    } else {
+                        toast.error(t('recipeDetail.failedLoad'));
+                    }
+                }
+            } finally {
+                if (!cancelled) setLoading(false);
+            }
         }
-    };
+        load();
+        return () => { cancelled = true; };
+    }, [id, navigate]);
 
-    const handleDelete = () => {
-        if (!confirm('Are you sure you want to delete this recipe?')) return;
-
-        // UI-only delete
-        toast.success('Recipe deleted');
-        navigate('/recipes');
+    const handleDelete = async () => {
+        if (!confirm(t('recipeDetail.confirmDelete'))) return;
+        try {
+            await recipesApi.delete(id);
+            toast.success(t('recipeDetail.recipeDeleted'));
+            navigate('/recipes');
+        } catch {
+            toast.error(t('recipeDetail.failedDelete'));
+        }
     };
 
     const toggleIngredient = (index) => {
@@ -49,6 +72,13 @@ const RecipeDetail = () => {
         return ((originalQty * servings) / originalServings).toFixed(2);
     };
 
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+                <div className="w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+            </div>
+        );
+    }
     if (!recipe) {
         return null;
     }
@@ -67,7 +97,7 @@ const RecipeDetail = () => {
                     className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-6 transition-colors"
                 >
                     <ArrowLeft className="w-5 h-5" />
-                    Back to Recipes
+                    {t('recipeDetail.backToRecipes')}
                 </Link>
 
                 {/* Recipe Header */}
@@ -117,12 +147,12 @@ const RecipeDetail = () => {
                         </div>
                         {recipe.prep_time && (
                             <div className="text-sm">
-                                Prep: {recipe.prep_time} min
+                                {t('recipeDetail.prep')}: {recipe.prep_time} min
                             </div>
                         )}
                         {recipe.cook_time && (
                             <div className="text-sm">
-                                Cook: {recipe.cook_time} min
+                                {t('recipeDetail.cook')}: {recipe.cook_time} min
                             </div>
                         )}
                     </div>
@@ -133,10 +163,10 @@ const RecipeDetail = () => {
                     <div className="lg:col-span-1">
                         <div className="bg-white rounded-xl border border-gray-200 p-6 sticky top-24">
                             <div className="flex items-center justify-between mb-4">
-                                <h2 className="text-xl font-semibold text-gray-900">Ingredients</h2>
+                                <h2 className="text-xl font-semibold text-gray-900">{t('recipeDetail.ingredients')}</h2>
                                 <div className="flex items-center gap-2">
                                     <Users className="w-4 h-4 text-gray-500" />
-                                    <span className="text-sm text-gray-600">Servings:</span>
+                                    <span className="text-sm text-gray-600">{t('recipeDetail.servings')}:</span>
                                 </div>
                             </div>
 
@@ -199,7 +229,7 @@ const RecipeDetail = () => {
                     {/* Instructions Section */}
                     <div className="lg:col-span-2 space-y-6">
                         <div className="bg-white rounded-xl border border-gray-200 p-6">
-                            <h2 className="text-xl font-semibold text-gray-900 mb-4">Instructions</h2>
+                            <h2 className="text-xl font-semibold text-gray-900 mb-4">{t('recipeDetail.instructions')}</h2>
                             <ol className="space-y-4">
                                 {recipe.instructions && recipe.instructions.map((step, index) => (
                                     <li key={index} className="flex gap-4">
@@ -215,7 +245,7 @@ const RecipeDetail = () => {
                         {/* Nutrition Info */}
                         {recipe.nutrition && (
                             <div className="bg-white rounded-xl border border-gray-200 p-6">
-                                <h2 className="text-xl font-semibold text-gray-900 mb-4">Nutrition (per serving)</h2>
+                                <h2 className="text-xl font-semibold text-gray-900 mb-4">{t('recipeDetail.nutritionPerServing')}</h2>
                                 <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
                                     <NutritionCard label="Calories" value={recipe.nutrition.calories} unit="kcal" />
                                     <NutritionCard label="Protein" value={recipe.nutrition.protein} unit="g" />

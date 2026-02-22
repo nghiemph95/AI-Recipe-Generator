@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 import { ChefHat, Mail, Lock } from 'lucide-react';
 
 const Login = () => {
+    const { t } = useTranslation();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
@@ -14,16 +16,13 @@ const Login = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
-
         const result = await login(email, password);
-
         if (result.success) {
-            toast.success('Welcome back!');
+            toast.success(t('auth.welcomeBackToast'));
             navigate('/dashboard');
         } else {
             toast.error(result.message);
         }
-
         setLoading(false);
     };
 
@@ -35,8 +34,8 @@ const Login = () => {
                     <div className="inline-flex items-center justify-center w-16 h-16 bg-emerald-500 rounded-2xl mb-4">
                         <ChefHat className="w-9 h-9 text-white" />
                     </div>
-                    <h1 className="text-3xl font-bold text-gray-900">Welcome Back</h1>
-                    <p className="text-gray-600 mt-2">Sign in to continue to AI Recipe Generator</p>
+                    <h1 className="text-3xl font-bold text-gray-900">{t('auth.welcomeBack')}</h1>
+                    <p className="text-gray-600 mt-2">{t('auth.signInToContinue')}</p>
                 </div>
 
                 {/* Login Form */}
@@ -45,7 +44,7 @@ const Login = () => {
                         {/* Email */}
                         <div>
                             <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                                Email
+                                {t('auth.email')}
                             </label>
                             <div className="relative">
                                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -64,7 +63,7 @@ const Login = () => {
                         {/* Password */}
                         <div>
                             <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-                                Password
+                                {t('auth.password')}
                             </label>
                             <div className="relative">
                                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -83,7 +82,7 @@ const Login = () => {
                         {/* Forgot Password */}
                         <div className="flex items-center justify-end">
                             <Link to="/reset-password" className="text-sm text-emerald-600 hover:text-emerald-700 font-medium">
-                                Forgot password?
+                                {t('auth.forgotPassword')}
                             </Link>
                         </div>
 
@@ -93,15 +92,15 @@ const Login = () => {
                             disabled={loading}
                             className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-medium py-2.5 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            {loading ? 'Signing in...' : 'Sign In'}
+                            {loading ? t('auth.signingIn') : t('auth.signIn')}
                         </button>
                     </form>
 
                     {/* Sign Up Link */}
                     <p className="text-center text-sm text-gray-600 mt-6">
-                        Don't have an account?{' '}
+                        {t('auth.noAccount')}{' '}
                         <Link to="/signup" className="text-emerald-600 hover:text-emerald-700 font-medium">
-                            Sign up
+                            {t('auth.signUp')}
                         </Link>
                     </p>
                 </div>

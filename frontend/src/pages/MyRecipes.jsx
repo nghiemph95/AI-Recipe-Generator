@@ -1,56 +1,66 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Search, Clock, ChefHat, Trash2 } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import toast from 'react-hot-toast';
-import { dummyRecipes } from '../data/dummyData';
+import { recipesApi } from '../services/api.js';
 
 const MyRecipes = () => {
+    const { t } = useTranslation();
     const [recipes, setRecipes] = useState([]);
     const [filteredRecipes, setFilteredRecipes] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCuisine, setSelectedCuisine] = useState('All');
     const [selectedDifficulty, setSelectedDifficulty] = useState('All');
+    const [loading, setLoading] = useState(true);
 
     const cuisines = ['All', 'Italian', 'Mexican', 'Indian', 'Chinese', 'Japanese', 'Thai', 'French', 'Mediterranean', 'American'];
     const difficulties = ['All', 'easy', 'medium', 'hard'];
 
+    const loadRecipes = async () => {
+        setLoading(true);
+        try {
+            const res = await recipesApi.getList({});
+            setRecipes(res?.recipes ?? []);
+        } catch {
+            setRecipes([]);
+            toast.error(t('recipes.failedLoad'));
+        } finally {
+            setLoading(false);
+        }
+    };
+
     useEffect(() => {
-        // Load dummy recipes
-        setRecipes(dummyRecipes);
+        loadRecipes();
     }, []);
 
     useEffect(() => {
-        filterRecipes();
-    }, [recipes, searchQuery, selectedCuisine, selectedDifficulty]);
-
-    const filterRecipes = () => {
         let filtered = recipes;
-
         if (searchQuery) {
             filtered = filtered.filter(recipe =>
-                recipe.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                recipe.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 recipe.description?.toLowerCase().includes(searchQuery.toLowerCase())
             );
         }
-
         if (selectedCuisine !== 'All') {
             filtered = filtered.filter(recipe => recipe.cuisine_type === selectedCuisine);
         }
-
         if (selectedDifficulty !== 'All') {
             filtered = filtered.filter(recipe => recipe.difficulty === selectedDifficulty);
         }
-
         setFilteredRecipes(filtered);
-    };
+    }, [recipes, searchQuery, selectedCuisine, selectedDifficulty]);
 
-    const handleDelete = (id) => {
-        if (!confirm('Are you sure you want to delete this recipe?')) return;
-
-        // UI-only delete
-        setRecipes(recipes.filter(recipe => recipe.id !== id));
-        toast.success('Recipe deleted');
+    const handleDelete = async (id) => {
+        if (!confirm(t('recipes.confirmDelete'))) return;
+        try {
+            await recipesApi.delete(id);
+            setRecipes(recipes.filter(recipe => recipe.id !== id));
+            toast.success(t('recipes.recipeDeleted'));
+        } catch {
+            toast.error(t('recipes.failedDelete'));
+        }
     };
 
     return (
@@ -60,8 +70,8 @@ const MyRecipes = () => {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 {/* Header */}
                 <div className="mb-6">
-                    <h1 className="text-3xl font-bold text-gray-900">My Recipes</h1>
-                    <p className="text-gray-600 mt-1">Your collection of saved recipes</p>
+                    <h1 className="text-3xl font-bold text-gray-900">{t('recipes.title')}</h1>
+                    <p className="text-gray-600 mt-1">{t('recipes.subtitle')}</p>
                 </div>
 
                 {/* Search and Filters */}
@@ -74,7 +84,7 @@ const MyRecipes = () => {
                                 type="text"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                placeholder="Search recipes..."
+                                placeholder={t('recipes.searchPlaceholder')}
                                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none"
                             />
                         </div>
@@ -87,7 +97,7 @@ const MyRecipes = () => {
                         >
                             {cuisines.map(cuisine => (
                                 <option key={cuisine} value={cuisine}>
-                                    {cuisine === 'All' ? 'All Cuisines' : cuisine}
+                                    {cuisine === 'All' ? t('recipes.allCuisines') : cuisine}
                                 </option>
                             ))}
                         </select>
@@ -100,17 +110,23 @@ const MyRecipes = () => {
                         >
                             {difficulties.map(diff => (
                                 <option key={diff} value={diff}>
-                                    {diff === 'All' ? 'All Difficulties' : diff.charAt(0).toUpperCase() + diff.slice(1)}
+                                    {diff === 'All' ? t('recipes.allDifficulties') : diff.charAt(0).toUpperCase() + diff.slice(1)}
                                 </option>
                             ))}
                         </select>
                     </div>
                 </div>
 
+                {loading ? (
+                    <div className="flex justify-center py-12">
+                        <div className="w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+                    </div>
+                ) : (
+                <>
                 {/* Recipe Count */}
                 <div className="mb-4">
                     <p className="text-sm text-gray-600">
-                        Showing {filteredRecipes.length} of {recipes.length} recipes
+                        {t('recipes.showingCount', { filtered: filteredRecipes.length, total: recipes.length })}
                     </p>
                 </div>
 
@@ -129,17 +145,19 @@ const MyRecipes = () => {
                     <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
                         <ChefHat className="w-16 h-16 text-gray-300 mx-auto mb-4" />
                         <p className="text-gray-500 mb-4">
-                            {recipes.length === 0 ? 'No recipes yet' : 'No recipes match your filters'}
+                            {recipes.length === 0 ? t('recipes.noRecipes') : t('recipes.noMatch')}
                         </p>
                         {recipes.length === 0 && (
                             <Link
                                 to="/generate"
                                 className="inline-block bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-2.5 rounded-lg font-medium transition-colors"
                             >
-                                Generate Your First Recipe
+                                {t('recipes.generateFirst')}
                             </Link>
                         )}
                     </div>
+                )}
+                </>
                 )}
             </div>
         </div>
@@ -206,7 +224,7 @@ const RecipeCard = ({ recipe, onDelete }) => {
                         to={`/recipes/${recipe.id}`}
                         className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white text-center py-2 rounded-lg font-medium transition-colors text-sm"
                     >
-                        View Recipe
+                        {t('recipes.viewRecipe')}
                     </Link>
                     <button
                         onClick={() => onDelete(recipe.id)}

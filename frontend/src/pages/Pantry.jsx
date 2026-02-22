@@ -1,24 +1,43 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Plus, Search, X, Calendar, AlertCircle } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import toast from 'react-hot-toast';
 import { format } from 'date-fns';
-import { dummyPantryItems, getExpiringItems } from '../data/dummyData';
+import { pantryApi } from '../services/api.js';
 
 const CATEGORIES = ['Vegetables', 'Fruits', 'Dairy', 'Meat', 'Grains', 'Spices', 'Other'];
 
 const Pantry = () => {
+    const { t } = useTranslation();
     const [items, setItems] = useState([]);
     const [filteredItems, setFilteredItems] = useState([]);
     const [showAddModal, setShowAddModal] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCategory, setSelectedCategory] = useState('All');
     const [expiringItems, setExpiringItems] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    const loadData = async () => {
+        setLoading(true);
+        try {
+            const [listRes, expiringRes] = await Promise.all([
+                pantryApi.getItems({}),
+                pantryApi.getExpiringSoon({ days: 7 }),
+            ]);
+            setItems(listRes?.items ?? []);
+            setExpiringItems(expiringRes?.items ?? []);
+        } catch {
+            setItems([]);
+            setExpiringItems([]);
+            toast.error(t('pantry.failedLoad'));
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
-        // Load dummy data
-        setItems(dummyPantryItems);
-        setExpiringItems(getExpiringItems());
+        loadData();
     }, []);
 
     useEffect(() => {
@@ -41,13 +60,25 @@ const Pantry = () => {
         setFilteredItems(filtered);
     };
 
-    const handleDelete = (id) => {
-        if (!confirm('Are you sure you want to delete this item?')) return;
-
-        // UI-only delete (no API call)
-        setItems(items.filter(item => item.id !== id));
-        toast.success('Item deleted');
+    const handleDelete = async (id) => {
+        if (!confirm(t('pantry.confirmDelete'))) return;
+        try {
+            await pantryApi.deleteItem(id);
+            setItems(items.filter(item => item.id !== id));
+            setExpiringItems(expiringItems.filter(item => item.id !== id));
+            toast.success(t('pantry.itemDeleted'));
+        } catch {
+            toast.error(t('pantry.failedDelete'));
+        }
     };
+
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+                <div className="w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-gray-50">
@@ -57,15 +88,15 @@ const Pantry = () => {
                 {/* Header */}
                 <div className="flex items-center justify-between mb-6">
                     <div>
-                        <h1 className="text-3xl font-bold text-gray-900">Pantry</h1>
-                        <p className="text-gray-600 mt-1">Manage your ingredients and track expiry dates</p>
+                        <h1 className="text-3xl font-bold text-gray-900">{t('pantry.title')}</h1>
+                        <p className="text-gray-600 mt-1">{t('pantry.subtitle')}</p>
                     </div>
                     <button
                         onClick={() => setShowAddModal(true)}
                         className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2.5 rounded-lg font-medium transition-colors"
                     >
                         <Plus className="w-5 h-5" />
-                        Add Item
+                        {t('pantry.addItem')}
                     </button>
                 </div>
 
@@ -75,9 +106,9 @@ const Pantry = () => {
                         <div className="flex items-start gap-3">
                             <AlertCircle className="w-5 h-5 text-amber-600 mt-0.5" />
                             <div>
-                                <h3 className="font-medium text-amber-900">Items Expiring Soon</h3>
+                                <h3 className="font-medium text-amber-900">{t('pantry.expiringSoon')}</h3>
                                 <p className="text-sm text-amber-700 mt-1">
-                                    {expiringItems.length} item{expiringItems.length > 1 ? 's' : ''} expiring within 7 days
+                                    {t('pantry.expiringWithin', { count: expiringItems.length })}
                                 </p>
                             </div>
                         </div>
@@ -94,7 +125,7 @@ const Pantry = () => {
                                 type="text"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                placeholder="Search ingredients..."
+                                placeholder={t('pantry.searchPlaceholder')}
                                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none"
                             />
                         </div>
@@ -102,7 +133,7 @@ const Pantry = () => {
                         {/* Category Filter */}
                         <div className="flex gap-2 overflow-x-auto pb-2 sm:pb-0">
                             <CategoryButton
-                                label="All"
+                                label={t('common.all')}
                                 active={selectedCategory === 'All'}
                                 onClick={() => setSelectedCategory('All')}
                             />
@@ -127,12 +158,13 @@ const Pantry = () => {
                                 item={item}
                                 onDelete={handleDelete}
                                 isExpiring={expiringItems.some(exp => exp.id === item.id)}
+                                t={t}
                             />
                         ))}
                     </div>
                 ) : (
                     <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
-                        <p className="text-gray-500">No items found</p>
+                        <p className="text-gray-500">{t('pantry.noItems')}</p>
                     </div>
                 )}
             </div>
@@ -141,9 +173,8 @@ const Pantry = () => {
             {showAddModal && (
                 <AddItemModal
                     onClose={() => setShowAddModal(false)}
-                    onSuccess={(newItem) => {
-                        setItems([...items, newItem]);
-                        setExpiringItems(getExpiringItems());
+                    onSuccess={() => {
+                        loadData();
                     }}
                 />
             )}
@@ -163,7 +194,7 @@ const CategoryButton = ({ label, active, onClick }) => (
     </button>
 );
 
-const PantryItemCard = ({ item, onDelete, isExpiring }) => {
+const PantryItemCard = ({ item, onDelete, isExpiring, t }) => {
     const isExpired = item.expiry_date && new Date(item.expiry_date) < new Date();
 
     return (
@@ -184,7 +215,7 @@ const PantryItemCard = ({ item, onDelete, isExpiring }) => {
 
             <div className="space-y-2">
                 <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600">Quantity:</span>
+                    <span className="text-gray-600">{t('pantry.quantity')}:</span>
                     <span className="font-medium text-gray-900">
                         {item.quantity} {item.unit}
                     </span>
@@ -201,7 +232,7 @@ const PantryItemCard = ({ item, onDelete, isExpiring }) => {
 
                 {item.is_running_low && (
                     <span className="inline-block px-2 py-1 bg-orange-100 text-orange-700 text-xs font-medium rounded">
-                        Running Low
+                        {t('pantry.runningLow')}
                     </span>
                 )}
             </div>
@@ -210,6 +241,7 @@ const PantryItemCard = ({ item, onDelete, isExpiring }) => {
 };
 
 const AddItemModal = ({ onClose, onSuccess }) => {
+    const { t } = useTranslation();
     const [formData, setFormData] = useState({
         name: '',
         quantity: '',
@@ -220,29 +252,33 @@ const AddItemModal = ({ onClose, onSuccess }) => {
     });
     const [loading, setLoading] = useState(false);
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-
-        // UI-only add (no API call)
-        const newItem = {
-            id: Date.now(),
-            user_id: 1,
-            ...formData,
-            quantity: parseFloat(formData.quantity),
-            expiry_date: formData.expiry_date || null,
-            created_at: new Date().toISOString()
-        };
-
-        toast.success('Item added to pantry');
-        onSuccess(newItem);
-        onClose();
+        setLoading(true);
+        try {
+            await pantryApi.addItem({
+                name: formData.name,
+                quantity: parseFloat(formData.quantity) || 0,
+                unit: formData.unit,
+                category: formData.category,
+                expiry_date: formData.expiry_date || undefined,
+                is_running_low: formData.is_running_low,
+            });
+            toast.success(t('pantry.itemAdded'));
+            onSuccess();
+            onClose();
+        } catch {
+            toast.error(t('pantry.failedAdd'));
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
             <div className="bg-white rounded-xl max-w-md w-full p-6">
                 <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-xl font-bold text-gray-900">Add Pantry Item</h2>
+                    <h2 className="text-xl font-bold text-gray-900">{t('pantry.addItemTitle')}</h2>
                     <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
                         <X className="w-6 h-6" />
                     </button>
@@ -250,7 +286,7 @@ const AddItemModal = ({ onClose, onSuccess }) => {
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Name</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">{t('pantry.name')}</label>
                         <input
                             type="text"
                             value={formData.name}
@@ -262,7 +298,7 @@ const AddItemModal = ({ onClose, onSuccess }) => {
 
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Quantity</label>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">{t('pantry.quantity')}</label>
                             <input
                                 type="number"
                                 step="0.01"
@@ -274,7 +310,7 @@ const AddItemModal = ({ onClose, onSuccess }) => {
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Unit</label>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">{t('pantry.unit')}</label>
                             <select
                                 value={formData.unit}
                                 onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
@@ -293,7 +329,7 @@ const AddItemModal = ({ onClose, onSuccess }) => {
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">{t('pantry.category')}</label>
                         <select
                             value={formData.category}
                             onChange={(e) => setFormData({ ...formData, category: e.target.value })}
@@ -306,7 +342,7 @@ const AddItemModal = ({ onClose, onSuccess }) => {
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Expiry Date (Optional)</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">{t('pantry.expiryDateOptional')}</label>
                         <input
                             type="date"
                             value={formData.expiry_date}
@@ -334,14 +370,14 @@ const AddItemModal = ({ onClose, onSuccess }) => {
                             onClick={onClose}
                             className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors"
                         >
-                            Cancel
+                            {t('common.cancel')}
                         </button>
                         <button
                             type="submit"
                             disabled={loading}
                             className="flex-1 px-4 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg font-medium transition-colors disabled:opacity-50"
                         >
-                            {loading ? 'Adding...' : 'Add Item'}
+                            {loading ? t('common.adding') : t('pantry.addItem')}
                         </button>
                     </div>
                 </form>
