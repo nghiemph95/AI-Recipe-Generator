@@ -1,0 +1,2 @@
+run jwt secret: node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
+create folder: mkdir config controller middleware models routes utils
