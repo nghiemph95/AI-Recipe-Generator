@@ -22,12 +22,12 @@ const Navbar = () => {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex justify-between items-center h-16">
                     {/* Logo */}
-                    <Link to="/dashboard" className="flex items-center gap-2 text-xl font-semibold text-gray-900">
+                    <Link to="/dashboard" className="flex items-center gap-2 text-xl font-semibold text-gray-900 shrink-0">
                         <ChefHat className="w-7 h-7 text-emerald-500" />
-                        <span>{t('common.appName')}</span>
+                        <span className="whitespace-nowrap">{t('common.appName')}</span>
                     </Link>
 
-                    <div className="hidden md:flex items-center gap-1">
+                    <div className="hidden md:flex items-center gap-1 flex-nowrap">
                         <NavLink to="/dashboard" icon={<Home className="w-4 h-4" />} label={t('nav.dashboard')} />
                         <NavLink to="/pantry" icon={<UtensilsCrossed className="w-4 h-4" />} label={t('nav.pantry')} />
                         <NavLink to="/generate" icon={<ChefHat className="w-4 h-4" />} label={t('nav.generate')} />
@@ -53,10 +53,10 @@ const Navbar = () => {
                         </Link>
                         <button
                             onClick={handleLogout}
-                            className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                            className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors shrink-0"
                         >
-                            <LogOut className="w-4 h-4" />
-                            <span className="hidden sm:inline">{t('common.logout')}</span>
+                            <LogOut className="w-4 h-4 shrink-0" />
+                            <span className="hidden sm:inline whitespace-nowrap">{t('common.logout')}</span>
                         </button>
                     </div>
                 </div>
@@ -69,10 +69,10 @@ const NavLink = ({ to, icon, label }) => {
     return (
         <Link
             to={to}
-            className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+            className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors shrink-0"
         >
             {icon}
-            <span>{label}</span>
+            <span className="whitespace-nowrap">{label}</span>
         </Link>
     );
 };
