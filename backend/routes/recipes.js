@@ -12,6 +12,7 @@ router.post(
   "/generate/pantry-suggestions",
   recipeController.generatePantrySuggestions,
 );
+router.post("/translate", recipeController.translateRecipe);
 router.get("/pantry-suggestions", recipeController.getPantrySuggestions);
 
 // ——— CRUD ———

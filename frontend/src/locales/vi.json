@@ -149,7 +149,14 @@
     "addIngredientOrPantry": "Vui lòng thêm ít nhất một nguyên liệu hoặc dùng tủ thực phẩm",
     "placeholder": "Công thức tạo ra sẽ hiển thị ở đây",
     "cookingTips": "Mẹo nấu ăn",
-    "nutritionPerServing": "Dinh dưỡng (mỗi khẩu phần)"
+    "nutritionPerServing": "Dinh dưỡng (mỗi khẩu phần)",
+    "translateRecipe": "Dịch công thức",
+    "translateToVietnamese": "Tiếng Việt",
+    "translateToEnglish": "Tiếng Anh",
+    "translateButton": "Dịch",
+    "translating": "Đang dịch…",
+    "recipeTranslated": "Đã dịch công thức thành công",
+    "failedTranslate": "Dịch công thức thất bại"
   },
   "mealPlanner": {
     "title": "Kế hoạch bữa ăn",

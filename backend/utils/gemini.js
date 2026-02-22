@@ -8,7 +8,7 @@ import { GoogleGenAI } from "@google/genai";
 dotenv.config();
 dotenv.config({ path: ".env.local" });
 
-const apiKey = process.env.GEMINI_API_KEY;
+const apiKey = process.env.GOOGLE_API_KEY;
 const ai = apiKey ? new GoogleGenAI({ apiKey }) : null;
 
 if (!apiKey) {
@@ -209,4 +209,77 @@ export async function generatePantrySuggestions(arg1, arg2) {
     : [];
 
   return { suggestions };
+}
+
+/** Language code to full name for prompt */
+const LANGUAGE_NAMES = {
+  vi: "Vietnamese",
+  en: "English",
+};
+
+/**
+ * Translate a recipe's text fields to the target language (Gemini).
+ * recipe: { name, description, ingredients: [{ name, quantity, unit }], instructions, dietaryTags?, cookingTips? }
+ * targetLanguage: 'vi' | 'en' or full name e.g. 'Vietnamese'
+ * Returns recipe with same structure, text fields translated; numbers/units unchanged.
+ */
+export async function translateRecipe(recipe, targetLanguage) {
+  if (!ai) throw new Error("Gemini API is not configured (GEMINI_API_KEY).");
+  if (!recipe || !recipe.name) throw new Error("Recipe is required for translation.");
+
+  const langName =
+    LANGUAGE_NAMES[targetLanguage] ||
+    (typeof targetLanguage === "string" ? targetLanguage : "Vietnamese");
+
+  const payload = {
+    name: recipe.name,
+    description: recipe.description || "",
+    ingredients: (recipe.ingredients || []).map((i) => ({
+      name: i.name,
+      quantity: i.quantity,
+      unit: i.unit,
+    })),
+    instructions: recipe.instructions || [],
+    dietaryTags: recipe.dietary_tags || recipe.dietaryTags || [],
+    cookingTips: recipe.cooking_tips || recipe.cookingTips || [],
+  };
+
+  const prompt = `Translate this recipe into ${langName}. Keep the exact same JSON structure. Only translate text: name, description, each ingredient "name", each instruction string, dietaryTags strings, cookingTips strings. Keep all numbers (quantity, etc.) and "unit" values unchanged. Return ONLY valid JSON, no markdown.
+
+Input recipe (JSON):
+${JSON.stringify(payload)}
+
+Return the translated recipe as a single JSON object with keys: name, description, ingredients (array of { name, quantity, unit }), instructions (array of strings), dietaryTags (array of strings), cookingTips (array of strings).`;
+
+  const response = await ai.models.generateContent({
+    model: MODEL,
+    contents: prompt,
+  });
+
+  const rawText = (response.text || "").trim();
+  const jsonStr = stripMarkdownJson(rawText);
+  let data;
+
+  try {
+    data = JSON.parse(jsonStr);
+  } catch (e) {
+    console.error("translateRecipe JSON parse error:", e.message, "Raw:", rawText?.slice(0, 200));
+    throw new Error("Could not parse translated recipe from AI.");
+  }
+
+  return {
+    ...recipe,
+    name: data.name || recipe.name,
+    description: data.description ?? recipe.description,
+    ingredients: Array.isArray(data.ingredients)
+      ? data.ingredients.map((ing, i) => ({
+          name: ing.name || (recipe.ingredients && recipe.ingredients[i]?.name),
+          quantity: ing.quantity ?? (recipe.ingredients && recipe.ingredients[i]?.quantity),
+          unit: ing.unit ?? (recipe.ingredients && recipe.ingredients[i]?.unit),
+        }))
+      : recipe.ingredients,
+    instructions: Array.isArray(data.instructions) ? data.instructions : recipe.instructions,
+    dietary_tags: Array.isArray(data.dietaryTags) ? data.dietaryTags : recipe.dietary_tags || recipe.dietaryTags,
+    cooking_tips: Array.isArray(data.cookingTips) ? data.cookingTips : recipe.cooking_tips || recipe.cookingTips,
+  };
 }

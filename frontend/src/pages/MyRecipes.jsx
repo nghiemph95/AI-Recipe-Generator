@@ -165,6 +165,7 @@ const MyRecipes = () => {
 };
 
 const RecipeCard = ({ recipe, onDelete }) => {
+    const { t } = useTranslation();
     const totalTime = (recipe.prep_time || 0) + (recipe.cook_time || 0);
 
     return (

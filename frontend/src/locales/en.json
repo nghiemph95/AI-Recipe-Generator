@@ -149,7 +149,14 @@
     "addIngredientOrPantry": "Please add at least one ingredient or use pantry items",
     "placeholder": "Your generated recipe will appear here",
     "cookingTips": "Cooking Tips",
-    "nutritionPerServing": "Nutrition (per serving)"
+    "nutritionPerServing": "Nutrition (per serving)",
+    "translateRecipe": "Translate recipe",
+    "translateToVietnamese": "Vietnamese",
+    "translateToEnglish": "English",
+    "translateButton": "Translate",
+    "translating": "Translating…",
+    "recipeTranslated": "Recipe translated successfully",
+    "failedTranslate": "Failed to translate recipe"
   },
   "mealPlanner": {
     "title": "Meal Planner",

@@ -70,6 +70,7 @@ export const recipesApi = {
   update: (id, body) => api.put(`/recipes/${id}`, body).then(getData),
   delete: (id) => api.delete(`/recipes/${id}`).then(getData),
   generate: (body) => api.post('/recipes/generate', body).then(getData),
+  translate: (body) => api.post('/recipes/translate', body).then(getData),
   getPantrySuggestions: () => api.get('/recipes/pantry-suggestions').then(getData),
   generatePantrySuggestions: (body) => api.post('/recipes/generate/pantry-suggestions', body).then(getData),
 };

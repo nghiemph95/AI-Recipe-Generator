@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ChefHat, Sparkles, Plus, X, Clock, Users } from 'lucide-react';
+import { ChefHat, Sparkles, Plus, X, Clock, Users, Languages } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import toast from 'react-hot-toast';
 import { recipesApi, usersApi } from '../services/api.js';
@@ -41,6 +41,8 @@ const RecipeGenerator = () => {
     const [generating, setGenerating] = useState(false);
     const [generatedRecipe, setGeneratedRecipe] = useState(null);
     const [saving, setSaving] = useState(false);
+    const [translating, setTranslating] = useState(false);
+    const [translateLanguage, setTranslateLanguage] = useState('vi');
 
     useEffect(() => {
         usersApi.getPreferences().then((prefs) => {
@@ -93,6 +95,25 @@ const RecipeGenerator = () => {
             toast.error(t('recipeGenerator.failedGenerate'));
         } finally {
             setGenerating(false);
+        }
+    };
+
+    const handleTranslate = async () => {
+        if (!generatedRecipe) return;
+        setTranslating(true);
+        try {
+            const res = await recipesApi.translate({
+                recipe: generatedRecipe,
+                targetLanguage: translateLanguage,
+            });
+            const recipe = res?.recipe;
+            setGeneratedRecipe(recipe ? toDisplay(recipe) : generatedRecipe);
+            if (recipe) toast.success(t('recipeGenerator.recipeTranslated'));
+            else toast.error(t('recipeGenerator.failedTranslate'));
+        } catch {
+            toast.error(t('recipeGenerator.failedTranslate'));
+        } finally {
+            setTranslating(false);
         }
     };
 
@@ -385,6 +406,36 @@ const RecipeGenerator = () => {
                                         </ul>
                                     </div>
                                 )}
+
+                                {/* Translate */}
+                                <div className="flex flex-wrap items-center gap-3 pt-4 border-t border-gray-200">
+                                    <span className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                                        <Languages className="w-4 h-4" />
+                                        {t('recipeGenerator.translateRecipe')}
+                                    </span>
+                                    <select
+                                        value={translateLanguage}
+                                        onChange={(e) => setTranslateLanguage(e.target.value)}
+                                        className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none text-sm"
+                                    >
+                                        <option value="vi">{t('recipeGenerator.translateToVietnamese')}</option>
+                                        <option value="en">{t('recipeGenerator.translateToEnglish')}</option>
+                                    </select>
+                                    <button
+                                        onClick={handleTranslate}
+                                        disabled={translating}
+                                        className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white font-medium rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2"
+                                    >
+                                        {translating ? (
+                                            <>
+                                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                                {t('recipeGenerator.translating')}
+                                            </>
+                                        ) : (
+                                            t('recipeGenerator.translateButton')
+                                        )}
+                                    </button>
+                                </div>
 
                                 {/* Actions */}
                                 <div className="flex gap-3 pt-4 border-t border-gray-200">

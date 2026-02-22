@@ -1,6 +1,10 @@
 import Recipe from '../models/Recipe.js';
 import PantryItem from '../models/PantryItem.js';
-import { generateRecipe as generateRecipeAI, generatePantrySuggestions as generatePantrySuggestionsAI } from '../utils/gemini.js';
+import {
+  generateRecipe as generateRecipeAI,
+  generatePantrySuggestions as generatePantrySuggestionsAI,
+  translateRecipe as translateRecipeAI,
+} from '../utils/gemini.js';
 import { successResponse, errorResponse } from '../utils/response.js';
 
 /**
@@ -79,6 +83,24 @@ export async function getPantrySuggestions(req, res) {
   } catch (err) {
     console.error('getPantrySuggestions error:', err);
     return errorResponse(res, 'Failed to get pantry suggestions.', 500);
+  }
+}
+
+/**
+ * POST /api/recipes/translate
+ * Body: { recipe, targetLanguage } — translate recipe text to targetLanguage (e.g. 'vi', 'en').
+ */
+export async function translateRecipe(req, res) {
+  try {
+    const { recipe, targetLanguage = 'vi' } = req.body;
+    if (!recipe || !recipe.name) {
+      return errorResponse(res, 'Recipe is required for translation.', 400);
+    }
+    const translated = await translateRecipeAI(recipe, targetLanguage);
+    return successResponse(res, { recipe: translated }, 'Recipe translated successfully.');
+  } catch (err) {
+    console.error('translateRecipe error:', err);
+    return errorResponse(res, 'Failed to translate recipe.', 500);
   }
 }
 
