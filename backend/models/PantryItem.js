@@ -53,13 +53,16 @@ const PantryItem = sequelize.define(
 PantryItem.belongsTo(User, { foreignKey: 'user_id' });
 
 /**
- * Get all pantry items for a user (optional filters: category, is_running_low)
+ * Get all pantry items for a user (optional filters: category, is_running_low, search)
  */
 PantryItem.findByUserId = async function (userId, filters = {}) {
   // 1. Điều kiện: luôn theo user_id
   const where = { user_id: userId };
   if (filters.category) where.category = filters.category;
   if (filters.is_running_low !== undefined) where.is_running_low = filters.is_running_low;
+  if (filters.search) {
+    where.name = { [Op.iLike]: `%${filters.search}%` };
+  }
 
   // 2. Lấy danh sách, sắp xếp theo tên
   return PantryItem.findAll({ where, order: [['name', 'ASC']] });
