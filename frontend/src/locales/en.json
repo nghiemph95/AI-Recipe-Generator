@@ -252,5 +252,9 @@
     "failedChangePassword": "Failed to change password",
     "failedDeleteAccount": "Failed to delete account",
     "failedLoad": "Failed to load settings"
+  },
+  "footer": {
+    "builtWith": "Built with",
+    "createdBy": "Created by"
   }
 }

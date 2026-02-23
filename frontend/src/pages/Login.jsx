@@ -6,7 +6,7 @@ import toast from 'react-hot-toast';
 import { ChefHat, Mail, Lock } from 'lucide-react';
 
 const Login = () => {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
@@ -79,8 +79,26 @@ const Login = () => {
                             </div>
                         </div>
 
-                        {/* Forgot Password */}
-                        <div className="flex items-center justify-end">
+                        {/* Language switch (trái) + Forgot password (phải) */}
+                        <div className="flex items-center justify-between">
+                            <div className="inline-flex rounded-lg border border-gray-200 p-0.5 bg-gray-50">
+                                <button
+                                    type="button"
+                                    onClick={() => i18n.changeLanguage('en')}
+                                    className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${i18n.language === 'en' ? 'bg-white text-emerald-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                                    title={t('common.language')}
+                                >
+                                    EN
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => i18n.changeLanguage('vi')}
+                                    className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${i18n.language === 'vi' ? 'bg-white text-emerald-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                                    title={t('common.language')}
+                                >
+                                    VI
+                                </button>
+                            </div>
                             <Link to="/reset-password" className="text-sm text-emerald-600 hover:text-emerald-700 font-medium">
                                 {t('auth.forgotPassword')}
                             </Link>

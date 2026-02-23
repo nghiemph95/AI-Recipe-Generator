@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
+import Footer from './components/Footer';
 
 // Pages
 import Login from './pages/Login';
@@ -18,8 +19,10 @@ import MealPlanner from './pages/MealPlanner';
 function App() {
   return (
     <AuthProvider>
-      <Router>
-        <Routes>
+      <div className="min-h-screen flex flex-col">
+        <main className="flex-1">
+          <Router>
+            <Routes>
           {/* Public Routes */}
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<SignUp />} />
@@ -45,8 +48,11 @@ function App() {
 
           {/* Default redirect */}
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
-        </Routes>
-      </Router>
+            </Routes>
+          </Router>
+        </main>
+        <Footer />
+      </div>
 
       {/* Toast Notifications */}
       <Toaster

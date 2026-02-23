@@ -252,5 +252,9 @@
     "failedChangePassword": "Đổi mật khẩu thất bại",
     "failedDeleteAccount": "Xóa tài khoản thất bại",
     "failedLoad": "Tải cài đặt thất bại"
+  },
+  "footer": {
+    "builtWith": "Xây dựng với",
+    "createdBy": "Tạo bởi"
   }
 }
