@@ -5,8 +5,11 @@ import Navbar from '../components/Navbar';
 import toast from 'react-hot-toast';
 import { recipesApi, usersApi } from '../services/api.js';
 
-const CUISINES = ['Any', 'Italian', 'Mexican', 'Indian', 'Chinese', 'Japanese', 'Thai', 'French', 'Mediterranean', 'American'];
-const DIETARY_OPTIONS = ['Vegetarian', 'Vegan', 'Gluten-Free', 'Dairy-Free', 'Keto', 'Paleo'];
+const CUISINES = ['Any', 'Italian', 'Mexican', 'Indian', 'Chinese', 'Japanese', 'Thai', 'Vietnamese', 'French', 'Mediterranean', 'American'];
+const DIETARY_OPTIONS = [
+  'Vegetarian', 'Vegan', 'Pescatarian', 'Gluten-Free', 'Dairy-Free', 'Nut-Free',
+  'Halal', 'Low Sugar', 'Low Sodium', 'Keto', 'Paleo',
+];
 const COOKING_TIMES = [
     { value: 'quick', label: 'Quick (<30 min)' },
     { value: 'medium', label: 'Medium (30-60 min)' },

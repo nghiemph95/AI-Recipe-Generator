@@ -15,7 +15,7 @@ const MyRecipes = () => {
     const [selectedDifficulty, setSelectedDifficulty] = useState('All');
     const [loading, setLoading] = useState(true);
 
-    const cuisines = ['All', 'Italian', 'Mexican', 'Indian', 'Chinese', 'Japanese', 'Thai', 'French', 'Mediterranean', 'American'];
+    const cuisines = ['All', 'Italian', 'Mexican', 'Indian', 'Chinese', 'Japanese', 'Thai', 'Vietnamese', 'French', 'Mediterranean', 'American'];
     const difficulties = ['All', 'easy', 'medium', 'hard'];
 
     const loadRecipes = async () => {

@@ -7,8 +7,11 @@ import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import { usersApi } from '../services/api.js';
 
-const DIETARY_OPTIONS = ['Vegetarian', 'Vegan', 'Gluten-Free', 'Dairy-Free', 'Keto', 'Paleo'];
-const CUISINES = ['Any', 'Italian', 'Mexican', 'Indian', 'Chinese', 'Japanese', 'Thai', 'French', 'Mediterranean', 'American'];
+const DIETARY_OPTIONS = [
+  'Vegetarian', 'Vegan', 'Pescatarian', 'Gluten-Free', 'Dairy-Free', 'Nut-Free',
+  'Halal', 'Low Sugar', 'Low Sodium', 'Keto', 'Paleo',
+];
+const CUISINES = ['Any', 'Italian', 'Mexican', 'Indian', 'Chinese', 'Japanese', 'Thai', 'Vietnamese', 'French', 'Mediterranean', 'American'];
 
 const Settings = () => {
     const { t } = useTranslation();
